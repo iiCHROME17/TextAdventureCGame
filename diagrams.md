@@ -5,28 +5,27 @@
 graph TD
 
 
-start --> loadRooms[Load Rooms]
+start[Start] --> loadRooms[Load Rooms]
 loadRooms --> getMenuChoice
+stop[End]
+
 
 subgraph GetMenuChoice
-start[Start]
 
+  printRoomDescription --> getMenuChoice[Get User Choice]
 
-printRoomDescription --> getMenuChoice[Get User Choice]
+  getMenuChoice --> printRoomDescription
 
-getMenuChoice --> printRoomDescription
+  getMenuChoice --> getRoomChoice[Get Room Choice]
 
-getMenuChoice --> getRoomChoice[Get Room Choice]
+  getMenuChoice --> quitGame[Quit]
 
-getMenuChoice --> quitGame[Quit]
+  getRoomChoice --> movePlayer[Move Player]
 
-getRoomChoice --> movePlayer[Move Player]
+  movePlayer --> getMenuChoice
 
-movePlayer --> getMenuChoice
+  quitGame --> stop[Stop]
 
-quitGame --> stop[Stop]
-
-stop[End]
 end
 
 subgraph loadRoomsSubgraph
