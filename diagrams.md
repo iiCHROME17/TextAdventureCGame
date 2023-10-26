@@ -1,7 +1,7 @@
 ```mermaid
 graph TD
 
-
+subgraph GetMenuChoice
 start[Start]
 
 start --> loadRooms[Load Rooms]
@@ -21,6 +21,7 @@ movePlayer --> getMenuChoice
 quitGame --> stop[Stop]
 
 stop[End]
+end
 
 subgraph loadRoomsSubgraph
 
