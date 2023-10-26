@@ -6,7 +6,7 @@ graph TD
 
 
 start[Start] --> loadRooms[Load Rooms]
-loadRooms --> getMenuChoice
+returnRooms --> getMenuChoice
 stop[End]
 
 
