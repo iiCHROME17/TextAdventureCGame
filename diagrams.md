@@ -1,10 +1,16 @@
 ```mermaid
+
+
+
 graph TD
+
+
+start --> loadRooms[Load Rooms]
+loadRooms --> getMenuChoice
 
 subgraph GetMenuChoice
 start[Start]
 
-start --> loadRooms[Load Rooms]
 
 printRoomDescription --> getMenuChoice[Get User Choice]
 
