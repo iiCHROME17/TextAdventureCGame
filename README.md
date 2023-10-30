@@ -5,7 +5,6 @@
 | Assignment report Title:         |                                   |
 | Date (when the work completed):   |                                   |
 | Actual hrs spent for the assignment: |                                |
-|----------------------------------|-----------------------------------|
 
 
 ## Analysis of effect of CoPilot on Pat's coding
