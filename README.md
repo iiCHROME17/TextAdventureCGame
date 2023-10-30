@@ -13,3 +13,10 @@
 |--------------------------|------------------------|-----------------------|
 | on Learning                | Improved  ...   | Hindered  ...|
 | on Productivity           | Improved ... | Hindered ...                   |
+
+## Analysis of effect of CoPilot on my programming for tasks 3 and 4
+
+| Impact                   | Positive         | Negative    |
+|--------------------------|------------------------|-----------------------|
+| on Learning                | Improved  ...   | Hindered  ...|
+| on Productivity           | Improved ... | Hindered ...                   |
