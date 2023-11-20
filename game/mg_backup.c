@@ -18,19 +18,16 @@
 // let's have a datastructure that represents the rooms
 // room has connections and connections have rooms so we need to define connection first but we can't because room needs it
 // we can use a forward declaration to tell the compiler that connection is a struct that will be defined later
-typedef struct boss{
-  char* name;
-  char* element;
-  int health;
-  int damage;
-} boss;
 typedef struct connection connection;
 typedef struct room {
   char* name;
-  boss* bossEnemy;
   char* description;
   connection* connections;
   int numConnections;
+  char* bossEnemy;
+  char **spells;
+  int numSpells;
+
 } room;
 
 // we need a way to represent the connections between the rooms
@@ -39,40 +36,38 @@ typedef struct connection {
   room* room1;
   room* room2;
 } connection;
-//We need a datastructure for player spells
-typedef struct spell{
-  char* name;
-  char* element;
-  int damage;
-} spell;
+
 // we need a way to represent the player
 // let's have a datastructure that represents the player
 typedef struct player {
   room* currentRoom;
-  spell* spells;
-  int health;
 } player;
+
+typedef struct Enemy {
+  char* name;
+  char* element;
+  int health;
+  int damage;
+} Enemy;
 
 // we need a way to represent the game
 // let's have a datastructure that represents the game
 typedef struct game {
   room* rooms;
-  boss* bosses;
   int numRooms;
   player* player;
 } game;
 
 // let's have a function to print a menu and get user choice, return the choice
-int getMenuChoice(player* player) {
+int getMenuChoice() {
   int choice;
   printf("What would you like to do?\n");
-  //Check if the room has a boss
-  if(player->currentRoom->bossEnemy != NULL){
-    printf("1. Challenge %s\n", player->currentRoom->bossEnemy->name);
-  }
-  else{
+  if(currentRoom->bossEnemy != NULL)
+  {
+    printf("1. Challenge Boss\n");
+  } else {
     printf("1. Look around the room\n");
-    }
+  }
   printf("2. Move to another room\n");
   printf("3. Quit\n");
   scanf("%d", &choice);
@@ -88,6 +83,16 @@ int getMenuChoice(player* player) {
 void printRoomDescription(room* room) {
   printf("You are in the %s.\n", room->name);
   printf("%s\n", room->description);
+
+  if(room -> bossEnemy != NULL){
+    printf("There is a %s in the room\n", room->bossEnemy);
+  }
+
+  printf("Spells: ");
+  for(int i = 0; i < room->numSpells; i++){
+    printf("%s ", room->spells[i]);
+  }
+  printf("\n");
 }
 
 // a function to get user choice of room to move to
@@ -112,102 +117,90 @@ void movePlayer(player* player, int choice) {
   printRoomDescription(player->currentRoom);
 }
 
-spell* loadSpells(){
-  //Open the file and make array of spells
-  FILE* file = fopen("spells.csv", "r");
-  if (file == NULL) {
+Enemy loadEnemy(FILE* file){
+  Enemy enemy;
+
+  char line[500];
+  fgets(line, 500, file);
+  line[strlen(line)-1] = '\0';
+
+  //Split line on ","
+  char* token = strtok(line, ",");
+  //Allocate mem and copy enemy name
+  enemy.name = malloc(sizeof(char) * strlen(token) + 1);
+  strcpy(enemy.name, token);
+
+  token = strtok(NULL, ",");
+  //Allocate mem to the enemy element
+  enemy.element = malloc(sizeof(char) * strlen(token) + 1);
+  strcpy(enemy.element, token);
+
+  token = strtok(NULL, ",");
+  //Allocate mem to the enemy health
+  enemy.health = atoi(token);
+
+  token = strtok(NULL, ",");
+  //Allocate mem to the enemy damage
+  enemy.damage = atoi(token);
+
+  return enemy;
+}
+
+Enemy* loadEnemies(){
+  FILE* file = fopen("enemies.csv", "r");
+  if(file == NULL){
     printf("Error opening file\n");
     exit(1);
   }
-  //Count the number of lines in the file
-  int numLines = 0;
-  char line[500];
-  while (fgets(line, 500, file) != NULL) {
-    numLines++;
+
+  int numRooms = 10;
+  Enemy* bossEnemies = malloc(sizeof(Enemy) * numRooms);
+
+  for(int i = 0; i < numRooms; i++){
+    bossEnemies[i] = loadEnemy(file);
   }
-  //Rewind the file
-  rewind(file);
-  //Allocate memory for the spells
-  spell* spells = malloc(sizeof(spell) * numLines);
-  //Read the spells from the file
-  for(int i = 0; i < numLines; i++){
+
+  fclose(file);
+  return bossEnemies;
+}
+char** loadSpells(){
+  FILE* file = fopen("spells.csv", "r");
+  if(file == NULL){
+    printf("Error opening file\n");
+    exit(1);
+  }
+  int numSpells = 5;
+
+  char** spells = malloc(sizeof(char*) * numSpells);
+  char line[500];
+
+  for(int i = 0; i < numSpells; i++){
     fgets(line, 500, file);
     line[strlen(line)-1] = '\0';
-    //Split the line into the name, element, and damage
-    char* name = strtok(line, ",");
-    char* element = strtok(NULL, ",");
-    char* damageString = strtok(NULL, ",");
-    //Convert the damage string into an int
-    int damage = atoi(damageString);
-    //Create a spell
-    spell currentSpell;
-    currentSpell.name = strdup(name);
-    currentSpell.element = strdup(element);
-    currentSpell.damage = damage;
-    //Add the spell to the array
-    spells[i] = currentSpell;
-    printf("%s\n", spells[i].name);
-    printf("%s\n", spells[i].element);
+
+    //Split the line on ","
+    char* token = strtok(line, ",");
+    //Allocate mem and copy spell name
+    spells[i].name = malloc(sizeof(char) * strlen(token) + 1);
+    strcpy(spells[i].name, token);
+
+    token = strtok(NULL, ",");
+    //Allocate mem and copy spell element
+    spells[i].element = malloc(sizeof(char) * strlen(token) + 1);
+    strcpy(spells[i].element, token);
+
+    token = strtok(NULL, ",");
+    //Allocate mem and copy spell damage
+    spellls[i].damage = atoi(token);
   }
+
   fclose(file);
   return spells;
 }
-
-boss* loadBosses() {
-  // Open the file
-  FILE* file = fopen("enemies.csv", "r");
-  // Check that the file opened successfully
-  if (file == NULL) {
-    printf("Error opening file\n");
-    exit(1);
-  }
-  // Count the number of lines in the file
-  int numLines = 0;
-  char line[500];
-  while (fgets(line, 500, file) != NULL) {
-    numLines++;
-  }
-  // Rewind the file
-  rewind(file);
-  // Allocate memory for the bosses
-  boss* bosses = malloc(sizeof(boss) * numLines);
-
-  // Read the bosses from the file
-  for (int i = 0; i < numLines; i++) {
-    fgets(line, 500, file);
-    line[strlen(line)-1] = '\0';
-
-    // Split the line into the name, element, health, and damage
-    char* name = strtok(line, ",");
-    char* element = strtok(NULL, ",");
-    char* healthString = strtok(NULL, ",");
-    char* damageString = strtok(NULL, ",");
-
-    // Convert the health and damage strings into ints
-    int health = atoi(healthString);
-    int damage = atoi(damageString);
-
-    // Create a boss
-    boss currentBoss;
-    currentBoss.name = strdup(name);
-    currentBoss.element = strdup(element);
-    currentBoss.health = health;
-    currentBoss.damage = damage;
-
-    // Add the boss to the array
-    bosses[i] = currentBoss;
-  }
-
-  fclose(file);
-
-
-  return bosses;
-}
-
 // a function to load the rooms from a file
 // the file is called rooms.csv, and has a room name and room description on each line
 // the function returns an array of rooms
-room* loadRooms(boss* bosses) {
+room* loadRooms() {
   // open the file
   FILE* file = fopen("rooms.csv", "r");
   // we need to check that the file opened successfully
@@ -261,8 +254,6 @@ room* loadRooms(boss* bosses) {
     room.numConnections = 0;
     // we need to add the room to the array
     rooms[i] = room;
-    // we need to add the boss to the room
-    rooms[i].bossEnemy = &bosses[i];
   }
   // we need to close the file
   fclose(file);
@@ -301,8 +292,6 @@ room* loadRooms(boss* bosses) {
 player* createPlayer(room* currentRoom) {
   // we need to allocate memory for the player
   player* player = malloc(sizeof(player));
-  //Set the spells
-  player->spells = loadSpells();
   // we need to set the current room
   player->currentRoom = currentRoom;
   // we need to return the player
@@ -313,129 +302,27 @@ player* createPlayer(room* currentRoom) {
 game* createGame() {
   // we need to allocate memory for the game
   game* game = malloc(sizeof(game));
-  // we need to load the bosses
-  game->bosses = loadBosses();
   // we need to load the rooms
   printf("debug - about to load rooms\n");
-  game->rooms = loadRooms(game->bosses);
+  game->rooms = loadRooms();
   printf("debug - rooms loaded\n");
   // we need to set the number of rooms
   game->numRooms = 10;
   // we need to create the player
   game->player = createPlayer(&game->rooms[0]);
+
+  //Load Spells for the player
+  game->player->spells = loadSpells();
+  game->player->numSpells = 5;
+
+  //Load Boss Enemies per room
+  for(int i = 0; i < game->numRooms; i++){
+    game->rooms[i].bossEnemy = loadEnemies();
+  }
   // we need to return the game
   return game;
 }
-//A function to write the players' obituary
-void theGraveyard(player* player){
-  printf("You have met your end in the %s.\n", player->currentRoom->name);
-  printf("Who does this tombstone belong to?\n");
-  char name[100];
-  scanf("%s", name);
-  FILE* file = fopen("graves.csv", "a");
-  //Print the player's name and the room they died in to the file
-  //Print what killed them
-  // <player> could not overome <boss name> in the <room name>
-  //Random between three phrases:
-  // Could not overcome, was defeated by, overestimated
-  srand(time(NULL));
 
-  // Array of phrases
-  const char* phrases[] = {"could not overcome", "was defeated by", "overestimated"};
-  int phraseIndex = rand() % 3;  // Generate a random index
-
-  // Use the random phrase in fprintf
-  fprintf(file, "%s,%s,%s,%s\n", name, player->currentRoom->name, phrases[phraseIndex], player->currentRoom->bossEnemy->name);
-  printf("Your tombstone has been added to the graveyard.\n");
-  printf("%s in the %s,%s,%s\n", name, player->currentRoom->name, phrases[phraseIndex], player->currentRoom->bossEnemy->name);
-
-  //end the game
-  exit(0);
-}
-// For Choice 1, we need a combat system.
-//Use a function to play 
-void fightBoss(player* player)
-{
-  //Get The PLayer's current room
-  room* currentRoom = player->currentRoom;
-  //Get the room's boss
-  boss* roomBoss = currentRoom->bossEnemy;
-  printf("ARENA: %s\n", currentRoom->name);
-  printf("OPPONENT: %s\n", roomBoss->name);
-  printf("OPPONENT HEALTH: %d\n", roomBoss->health);
-  printf("OPPONENT ELEMENT: %s\n", roomBoss->element);
-
-  //Set the player's health to 100
-  player->health = 100;
-  // We need to give the player a choice of spells to use
-  // The player can choose to use a spell or try to run
-  // Once used, the boss will attack the player
-  // Both the player have a chance to crit
-  //We must compare elements
-  //If a spell element is the same as the boss element, no damage is dealt
-
-  int choice;
-  printf("What is your strategy?\n");
-  printf("1. Use a spell\n");
-  printf("2. Run\n");
-  scanf("%d", &choice);
-  // we need to check that the choice is valid
-  while (choice < 1 || choice > 2) {
-    printf("Invalid choice, please try again\n");
-    scanf("%d", &choice);
-  }
-  if (choice == 1) {
-    // Print the player's spells
-    printf("Your spells:\n");
-    // for loop equal to the number of spells
-    for (int i = 0; i < 5; i++) {
-      printf("%d. %s\n", i + 1, player->spells[i].name);
-      printf("Element: %s\n", player->spells[i].element);
-    }
-    // Get the player's choice of spell
-    while (roomBoss->health > 0 && player->health > 0) {
-      int spellChoice;
-      printf("Which spell would you like to use?\n");
-      scanf("%d", &spellChoice);
-      // we need to check that the choice is valid
-      while (spellChoice < 1 || spellChoice > 5) {
-        printf("Invalid choice, please try again\n");
-        scanf("%d", &spellChoice);
-      }
-      // Get the spell the player chose
-      spell* chosenSpell = &player->spells[spellChoice - 1];
-      // Check if the spell element is the same as the boss element
-      if (strcmp(chosenSpell->element, roomBoss->element) == 0) {
-        printf("You used %s!\n", chosenSpell->name);
-        printf("The attack is a %s attack!\n", chosenSpell->element);
-        printf("%s took no damage!\n", roomBoss->name);
-      } else {
-        // If the spell element is not the same as the boss element
-        printf("You used %s!\n", chosenSpell->name);
-        printf("You dealt %d damage!\n", chosenSpell->damage);
-        roomBoss->health -= chosenSpell->damage;
-        printf("%s has %d health left!\n", roomBoss->name, roomBoss->health);
-      }
-      // Boss's turn if the boss is still alive
-      if (roomBoss->health > 0) {
-        printf("%s Attacked You!\n", roomBoss->name);
-        printf("You took %d damage!\n", roomBoss->damage);
-        player->health -= roomBoss->damage;
-        printf("You have %d health left!\n", player->health);
-      }
-    }
-    // Check if the player or the boss won
-    if (player->health <= 0) {
-      printf("Game Over! You were defeated by %s.\n", roomBoss->name);
-      // Player has been placed in the graveyard
-      theGraveyard(player);
-    } else if (roomBoss->health <= 0) {
-      printf("Congratulations! You defeated %s.\n", roomBoss->name);
-      // Remove the boss from the room
-      player->currentRoom->bossEnemy = NULL;
-    }
-  }
-}
 // let's have a function to play the game which is the main function
 void playGame() {
   // we need to create the game
@@ -447,20 +334,20 @@ void playGame() {
   bool quit = false;
   while (!quit) {
     // we need to print the menu and get the user choice
-    int choice = getMenuChoice(game->player);
+    int choice = getMenuChoice();
     // we need to carry out the user choice
-    if(choice == 1 && game->player->currentRoom->bossEnemy != NULL)
-    {
-      fightBoss(game->player);
-  
-    } else if(choice == 1 && game->player->currentRoom->bossEnemy == NULL){
-      //Look at the boss's tombstone
-      printf("The boss has fallen. Sit and rest.\n");
-      printf("You regain your health.\n")
-      game->player->health = 100;
+    if (choice == 1 && game->player->currentRoom->bossEnemy != NULL) {
+      // we need to print the room description
+      printf("You approach the Boss, looking for a fight\n");
+      //Boss Fight Logic Goes here
 
-    }
-    else if (choice == 2) {
+      //After Winning, we need to remove the boss from the room
+      game->player->currentRoom->bossEnemy = NULL;
+      printf("You have defeated the Boss!\n");
+    } else if (choice == 1) {
+      // we need to print the room description
+      printRoomDescription(game->player->currentRoom);
+    } else if (choice == 2) {
       // we need to get the user choice of room to move to
       int choice = getRoomChoice(game->player->currentRoom);
       // we need to move the player to the room
