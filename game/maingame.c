@@ -456,7 +456,7 @@ void playGame() {
     } else if(choice == 1 && game->player->currentRoom->bossEnemy == NULL){
       //Look at the boss's tombstone
       printf("The boss has fallen. Sit and rest.\n");
-      printf("You regain your health.\n")
+      printf("You regain your health.\n");
       game->player->health = 100;
 
     }
