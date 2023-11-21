@@ -52,7 +52,6 @@ typedef struct player {
   spell* spells;
   int health;
   int baseHealth;
-  int bossesDefeated;
 } player;
 
 // we need a way to represent the game
@@ -62,7 +61,6 @@ typedef struct game {
   boss* bosses;
   int numRooms;
   player* player;
-  int bossesDefeated;
 } game;
 
 // let's have a function to print a menu and get user choice, return the choice
@@ -154,8 +152,8 @@ spell* loadSpells(){
   }
   //Count the number of lines in the file
   int numLines = 0;
-  char line[500];
-  while (fgets(line, 500, file) != NULL) {
+  char line[501];
+  while (fgets(line, 501, file) != NULL) {
     numLines++;
   }
   //Rewind the file
@@ -164,7 +162,7 @@ spell* loadSpells(){
   spell* spells = malloc(sizeof(spell) * numLines);
   //Read the spells from the file
   for(int i = 0; i < numLines; i++){
-    fgets(line, 500, file);
+    fgets(line, 501, file);
     line[strlen(line)-1] = '\0';
     //Split the line into the name, element, and damage
     char* name = strtok(line, ",");
@@ -172,6 +170,10 @@ spell* loadSpells(){
     char* damageString = strtok(NULL, ",");
     //Convert the damage string into an int
     int damage = atoi(damageString);
+    //fix the damage for last spell
+    if(damage < 10){
+      damage *= 10;
+    }
     //Create a spell
     spell currentSpell;
     currentSpell.name = strdup(name);
@@ -181,6 +183,7 @@ spell* loadSpells(){
     spells[i] = currentSpell;
     printf("%s\n", spells[i].name);
     printf("%s\n", spells[i].element);
+    //printf("%d\n", spells[i].damage);
   }
   fclose(file);
   return spells;
@@ -339,7 +342,6 @@ player* createPlayer(room* currentRoom) {
   // we need to set the current room
   player->currentRoom = currentRoom;
   // We need to set bosses defeated to 0
-  player->bossesDefeated = 0;
   // we need to return the player
   return player;
 }
@@ -396,24 +398,26 @@ void theGraveyard(player* player, bool legend){
 }
 // For Choice 1, we need a combat system.
 //Use a function to play 
-void fightBoss(player* player)
-{
-  //Get The PLayer's current room
+void fightBoss(player* player) {
+  // Get the player's current room
   room* currentRoom = player->currentRoom;
-  //Get the room's boss
+  // Get the room's boss
   boss* roomBoss = currentRoom->bossEnemy;
   printf("ARENA: %s\n", currentRoom->name);
   printf("OPPONENT: %s\n", roomBoss->name);
   printf("OPPONENT HEALTH: %d\n", roomBoss->health);
   printf("OPPONENT ELEMENT: %s\n", roomBoss->element);
 
-  //Set the player's health to 100
+  // Set the player's health to 100
   // We need to give the player a choice of spells to use
   // The player can choose to use a spell or try to run
   // Once used, the boss will attack the player
-  // Both the player have a chance to crit
-  //We must compare elements
-  //If a spell element is the same as the boss element, no damage is dealt
+  // Both the player and the boss have a chance to crit
+  // We must compare elements
+  // If a spell element is the same as the boss element, no damage is dealt
+
+  //Fatigue threshold for using the same spell consecutively, encourage the player to use different spells
+  int fatigueThreshold = 15;
 
   int choice;
   printf("What is your strategy?\n");
@@ -425,6 +429,7 @@ void fightBoss(player* player)
     printf("Invalid choice, please try again\n");
     scanf("%d", &choice);
   }
+
   if (choice == 1) {
     // Print the player's spells
     printf("Your spells:\n");
@@ -434,6 +439,7 @@ void fightBoss(player* player)
       printf("Element: %s\n", player->spells[i].element);
     }
     // Get the player's choice of spell
+    int lastSpellUsed = -1; // Initialize to an invalid index
     while (roomBoss->health > 0 && player->health > 0) {
       int spellChoice;
       printf("Which spell would you like to use?\n");
@@ -443,31 +449,46 @@ void fightBoss(player* player)
         printf("Invalid choice, please try again\n");
         scanf("%d", &spellChoice);
       }
-      // Get the spell the player chose
-      spell* chosenSpell = &player->spells[spellChoice - 1];
-      // Check if the spell element is the same as the boss element
-      if (strcmp(chosenSpell->element, roomBoss->element) == 0) {
-        printf("You used %s!\n", chosenSpell->name);
-        printf("The attack is a %s attack!\n", chosenSpell->element);
-        printf("%s took no damage!\n", roomBoss->name);
+      // Check if the player is using the same spell as the last turn
+      if (spellChoice - 1 == lastSpellUsed) {
+        printf("You can't use the same spell consecutively! Choose a different spell.\n");
       } else {
-        // If the spell element is not the same as the boss element
-        printf("You used %s!\n", chosenSpell->name);
-        //Create a random number between 30% of the spell damage and 100% of the spell damage
-        int actualDamage = (rand() % ((int)(chosenSpell->damage * 0.7) + 1)) + (int)(chosenSpell->damage * 0.3);
+        // Get the spell the player chose
+        spell* chosenSpell = &player->spells[spellChoice - 1];
+        
+        // Check if the spell element is the same as the boss element
+        if (strcmp(chosenSpell->element, roomBoss->element) == 0) {
+          printf("You used %s!\n", chosenSpell->name);
+          printf("The attack is a %s attack!\n", chosenSpell->element);
+          printf("%s took no damage!\n", roomBoss->name);
+        } else {
+          // If the spell element is not the same as the boss element
+          printf("You used %s!\n", chosenSpell->name);
+          printf("You dealt %d damage!\n", chosenSpell->damage);
+          
+          // Apply fatigueThreshold if the same spell is used consecutively
+          if (spellChoice - 1 == lastSpellUsed) {
+            roomBoss->health -= (chosenSpell->damage - fatigueThreshold);
+          } else {
+            roomBoss->health -= chosenSpell->damage;
+          }
+          
+          printf("%s has %d health left!\n", roomBoss->name, roomBoss->health);
+          
+          // Update lastSpellUsed
+          lastSpellUsed = spellChoice - 1;
+        }
 
-        printf("You dealt %d damage!\n", actualDamage);
-        roomBoss->health -= actualDamage;
-        printf("%s has %d health left!\n", roomBoss->name, roomBoss->health);
-      }
-      // Boss's turn if the boss is still alive
-      if (roomBoss->health > 0) {
-        printf("%s Attacked You!\n", roomBoss->name);
-        printf("You took %d damage!\n", roomBoss->damage);
-        player->health -= roomBoss->damage;
-        printf("You have %d health left!\n", player->health);
+        // Boss's turn if the boss is still alive
+        if (roomBoss->health > 0) {
+          printf("%s Attacked You!\n", roomBoss->name);
+          printf("You took %d damage!\n", roomBoss->damage);
+          player->health -= roomBoss->damage;
+          printf("You have %d health left!\n", player->health);
+        }
       }
     }
+
     // Check if the player or the boss won
     if (player->health <= 0) {
       printf("Game Over! You were defeated by %s.\n", roomBoss->name);
@@ -477,14 +498,11 @@ void fightBoss(player* player)
       printf("Congratulations! You defeated %s.\n", roomBoss->name);
       // Remove the boss from the room
       player->currentRoom->bossEnemy = NULL;
-      player->bossesDefeated++;
     }
-  }
-  else
-  {
+  } else {
     // The player chose to run
     printf("You ran away from %s.\n", roomBoss->name);
-    //Get a random number between 0 and 4, if 11, the player dies in their escape
+    // Get a random number between 0 and 4, if 11, the player dies in their escape
     int escapeChance = rand() % 4;
     if (escapeChance > 2) {
       printf("You were killed while trying to escape.\n");
@@ -492,15 +510,14 @@ void fightBoss(player* player)
       theGraveyard(player, false);
     } else {
       printf("You escaped safely.\n\n");
-      //the player is moved to a random room.
-      //Random number between 0 and 9
+      // the player is moved to a random room
+      // Random number between 0 and 9
       int randomRoom = rand() % 10;
       player->currentRoom = &player->currentRoom[randomRoom];
-
     }
-
   }
 }
+
 // let's have a function to play the game which is the main function
 void playGame() {
   // we need to create the game
@@ -549,9 +566,15 @@ void playGame() {
       loadGraveyard();
     }
     else if (choice == 4) {
-      // we need to quit
-      printf("You have defeated %d bosses.\n", game->bossesDefeated);
+      //print the player's health and spells
       printf("You have %d health.\n\n", game->player->health);
+      printf("Your spells:\n");
+      // for loop equal to the number of spells
+      for (int i = 0; i < 5; i++) {
+        printf("%d. %s\n", i + 1, game->player->spells[i].name);
+        printf("Element: %s\n", game->player->spells[i].element);
+        printf("Damage: %d\n", game->player->spells[i].damage);
+      }
     }
     
     else if (choice == 5) {
@@ -561,13 +584,13 @@ void playGame() {
 
   }
   //There are 10 bosses, if the player has defeated all of them, they win
-  if(game->bossesDefeated == 10){
-    printf("Congratulations! You have defeated all the bosses!\n");
-    printf("You win!\n");
+ // if(game->bossesDefeated == 10){
+   //printf("Congratulations! You have defeated all the bosses!\n");
+    //printf("You win!\n");
     // Open the graveyard
-    theGraveyard(game->player, true);
+    //theGraveyard(game->player, true);
 
-  }
+  //}
 }
 
 // let's have a main function to call the playGame function
