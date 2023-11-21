@@ -51,6 +51,8 @@ typedef struct player {
   room* currentRoom;
   spell* spells;
   int health;
+  int baseHealth;
+  int bossesDefeated;
 } player;
 
 // we need a way to represent the game
@@ -60,6 +62,7 @@ typedef struct game {
   boss* bosses;
   int numRooms;
   player* player;
+  int bossesDefeated;
 } game;
 
 // let's have a function to print a menu and get user choice, return the choice
@@ -71,13 +74,16 @@ int getMenuChoice(player* player) {
     printf("1. Challenge %s\n", player->currentRoom->bossEnemy->name);
   }
   else{
-    printf("1. Look around the room\n");
+    printf("1. Rest by the campfire.\n");
     }
   printf("2. Move to another room\n");
-  printf("3. Quit\n");
+  printf("3. Look at the graveyard\n");
+  printf("4. Think upon your accolades\n");
+  printf("5. Quit\n");
+  
   scanf("%d", &choice);
   // we need to check that the choice is valid
-  while (choice < 1 || choice > 3) {
+  while (choice < 1 || choice > 5) {
     printf("Invalid choice, please try again\n");
     scanf("%d", &choice);
   }
@@ -88,6 +94,33 @@ int getMenuChoice(player* player) {
 void printRoomDescription(room* room) {
   printf("You are in the %s.\n", room->name);
   printf("%s\n", room->description);
+}
+void loadGraveyard(){
+  FILE* file = fopen("graves.csv", "r");
+  if (file == NULL) {
+    printf("Error opening file\n");
+    exit(1);
+  }
+  //Count the number of lines in the file
+  int numLines = 0;
+  char line[500];
+  while (fgets(line, 500, file) != NULL) {
+    numLines++;
+  }
+  //Rewind the file
+  rewind(file);
+  //Allocate memory for the grave messages
+  char** graves = malloc(sizeof(char*) * numLines);
+  //Read the grave messages from the file
+  printf("The omniscient narrator reads the tombstones:\n");
+  // read each line of the file
+  for(int i = 0; i < numLines; i++){
+    fgets(line, 500, file);
+    // remove the newline character
+    line[strlen(line)-1] = '\0';
+    // print the line
+    printf("%s\n\n", line);
+  }
 }
 
 // a function to get user choice of room to move to
@@ -305,6 +338,8 @@ player* createPlayer(room* currentRoom) {
   player->spells = loadSpells();
   // we need to set the current room
   player->currentRoom = currentRoom;
+  // We need to set bosses defeated to 0
+  player->bossesDefeated = 0;
   // we need to return the player
   return player;
 }
@@ -327,7 +362,7 @@ game* createGame() {
   return game;
 }
 //A function to write the players' obituary
-void theGraveyard(player* player){
+void theGraveyard(player* player, bool legend){
   printf("You have met your end in the %s.\n", player->currentRoom->name);
   printf("Who does this tombstone belong to?\n");
   char name[100];
@@ -337,17 +372,24 @@ void theGraveyard(player* player){
   //Print what killed them
   // <player> could not overome <boss name> in the <room name>
   //Random between three phrases:
-  // Could not overcome, was defeated by, overestimated
+  // Could not overcome, was defeated by, underestimated
   srand(time(NULL));
 
   // Array of phrases
-  const char* phrases[] = {"could not overcome", "was defeated by", "overestimated"};
-  int phraseIndex = rand() % 3;  // Generate a random index
-
+  if(legend == false){
+    //The player died to a boss
+    char* phrases[] = {"could not overcome", "was defeated by", "underestimated"};
+    int phraseIndex = rand() % 3;  // Generate a random index
   // Use the random phrase in fprintf
-  fprintf(file, "%s,%s,%s,%s\n", name, player->currentRoom->name, phrases[phraseIndex], player->currentRoom->bossEnemy->name);
-  printf("Your tombstone has been added to the graveyard.\n");
-  printf("%s in the %s,%s,%s\n", name, player->currentRoom->name, phrases[phraseIndex], player->currentRoom->bossEnemy->name);
+    fprintf(file, "%s in the %s %s %s!\n", name, player->currentRoom->name, phrases[phraseIndex], player->currentRoom->bossEnemy->name);
+    printf("Your tombstone has been added to the graveyard.\n");
+    printf("%s in the %s %s %s!\n", name, player->currentRoom->name, phrases[phraseIndex], player->currentRoom->bossEnemy->name);
+  } else {
+    //The player died as a legend
+    fprintf(file,"%s lived a legendary life, and will be remembered forever.\n", name);
+    printf("After many years, Your tombstone has been added to the graveyard.\n");
+    printf("%s lived a legendary life, and will be remembered forever.\n", name);
+  }
 
   //end the game
   exit(0);
@@ -366,7 +408,6 @@ void fightBoss(player* player)
   printf("OPPONENT ELEMENT: %s\n", roomBoss->element);
 
   //Set the player's health to 100
-  player->health = 100;
   // We need to give the player a choice of spells to use
   // The player can choose to use a spell or try to run
   // Once used, the boss will attack the player
@@ -412,8 +453,11 @@ void fightBoss(player* player)
       } else {
         // If the spell element is not the same as the boss element
         printf("You used %s!\n", chosenSpell->name);
-        printf("You dealt %d damage!\n", chosenSpell->damage);
-        roomBoss->health -= chosenSpell->damage;
+        //Create a random number between 30% of the spell damage and 100% of the spell damage
+        int actualDamage = (rand() % ((int)(chosenSpell->damage * 0.7) + 1)) + (int)(chosenSpell->damage * 0.3);
+
+        printf("You dealt %d damage!\n", actualDamage);
+        roomBoss->health -= actualDamage;
         printf("%s has %d health left!\n", roomBoss->name, roomBoss->health);
       }
       // Boss's turn if the boss is still alive
@@ -428,12 +472,33 @@ void fightBoss(player* player)
     if (player->health <= 0) {
       printf("Game Over! You were defeated by %s.\n", roomBoss->name);
       // Player has been placed in the graveyard
-      theGraveyard(player);
+      theGraveyard(player, false);
     } else if (roomBoss->health <= 0) {
       printf("Congratulations! You defeated %s.\n", roomBoss->name);
       // Remove the boss from the room
       player->currentRoom->bossEnemy = NULL;
+      player->bossesDefeated++;
     }
+  }
+  else
+  {
+    // The player chose to run
+    printf("You ran away from %s.\n", roomBoss->name);
+    //Get a random number between 0 and 4, if 11, the player dies in their escape
+    int escapeChance = rand() % 4;
+    if (escapeChance > 2) {
+      printf("You were killed while trying to escape.\n");
+      // Player has been placed in the graveyard
+      theGraveyard(player, false);
+    } else {
+      printf("You escaped safely.\n\n");
+      //the player is moved to a random room.
+      //Random number between 0 and 9
+      int randomRoom = rand() % 10;
+      player->currentRoom = &player->currentRoom[randomRoom];
+
+    }
+
   }
 }
 // let's have a function to play the game which is the main function
@@ -441,6 +506,10 @@ void playGame() {
   // we need to create the game
   printf("Welcome to the game\n");
   game* game = createGame();
+  //Set the player's health to 100
+  game->player->health = 100;
+  game->player->baseHealth = 100;
+  //Set the bosses defeated to 0
   // we need to print the room description
   printRoomDescription(game->player->currentRoom);
   // we need to loop until the user quits
@@ -452,12 +521,22 @@ void playGame() {
     if(choice == 1 && game->player->currentRoom->bossEnemy != NULL)
     {
       fightBoss(game->player);
+      //if code has not been stopped, the player has defeated the boss
+      //Add one to the bosses defeated
+
   
     } else if(choice == 1 && game->player->currentRoom->bossEnemy == NULL){
       //Look at the boss's tombstone
       printf("The boss has fallen. Sit and rest.\n");
-      printf("You regain your health.\n");
-      game->player->health = 100;
+      printf("You absorb their soul and regain your health.\n");
+      //MAKE SURE THE CODE BELOW CAN BE DONE ONCE
+      bool hasRested = false;
+      if(hasRested == false){
+        game->player->health = game->player->baseHealth + 20;
+        game->player->baseHealth = game->player->health;
+        hasRested = true;
+      }
+      printf("You have %d health.\n", game->player->health);
 
     }
     else if (choice == 2) {
@@ -467,8 +546,27 @@ void playGame() {
       movePlayer(game->player, choice);
     } else if (choice == 3) {
       // we need to quit
+      loadGraveyard();
+    }
+    else if (choice == 4) {
+      // we need to quit
+      printf("You have defeated %d bosses.\n", game->bossesDefeated);
+      printf("You have %d health.\n\n", game->player->health);
+    }
+    
+    else if (choice == 5) {
+      // we need to quit
       quit = true;
     }
+
+  }
+  //There are 10 bosses, if the player has defeated all of them, they win
+  if(game->bossesDefeated == 10){
+    printf("Congratulations! You have defeated all the bosses!\n");
+    printf("You win!\n");
+    // Open the graveyard
+    theGraveyard(game->player, true);
+
   }
 }
 
