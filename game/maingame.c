@@ -353,9 +353,9 @@ game* createGame() {
   // we need to load the bosses
   game->bosses = loadBosses();
   // we need to load the rooms
-  printf("debug - about to load rooms\n");
+  //printf("debug - about to load rooms\n");
   game->rooms = loadRooms(game->bosses);
-  printf("debug - rooms loaded\n");
+  //printf("debug - rooms loaded\n");
   // we need to set the number of rooms
   game->numRooms = 10;
   // we need to create the player
@@ -437,6 +437,7 @@ void fightBoss(player* player) {
     for (int i = 0; i < 5; i++) {
       printf("%d. %s\n", i + 1, player->spells[i].name);
       printf("Element: %s\n", player->spells[i].element);
+      
     }
     // Get the player's choice of spell
     int lastSpellUsed = -1; // Initialize to an invalid index
@@ -463,8 +464,14 @@ void fightBoss(player* player) {
           printf("%s took no damage!\n", roomBoss->name);
         } else {
           // If the spell element is not the same as the boss element
+          // Randomise the damage between 40% and 120% of the spell's damage
+          int trueDamage = chosenSpell->damage * (rand() % 80 + 40) / 100;
           printf("You used %s!\n", chosenSpell->name);
-          printf("You dealt %d damage!\n", chosenSpell->damage);
+          //Print if critical hit
+          if(trueDamage > chosenSpell->damage){
+            printf("The attack was super effective!\n");
+          }
+          printf("You dealt %d damage!\n", trueDamage);
           
           // Apply fatigueThreshold if the same spell is used consecutively
           if (spellChoice - 1 == lastSpellUsed) {
@@ -575,6 +582,7 @@ void playGame() {
         printf("Element: %s\n", game->player->spells[i].element);
         printf("Damage: %d\n", game->player->spells[i].damage);
       }
+      printf("\n");
     }
     
     else if (choice == 5) {

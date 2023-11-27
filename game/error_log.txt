@@ -1,0 +1,7 @@
+maingame.c: In function ‘loadRooms’:
+maingame.c:341:9: error: redefinition of ‘rooms’
+  341 |   room *rooms = calloc(possibleConnections, sizeof(room));
+      |         ^~~~~
+maingame.c:293:9: note: previous definition of ‘rooms’ with type ‘room *’
+  293 |   room* rooms = malloc(sizeof(room) * numLines);
+      |         ^~~~~
