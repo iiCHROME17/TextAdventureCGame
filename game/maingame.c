@@ -52,6 +52,7 @@ typedef struct player {
   spell* spells;
   int health;
   int baseHealth;
+  int bossesDefeated;
 } player;
 
 // we need a way to represent the game
@@ -76,7 +77,7 @@ int getMenuChoice(player* player) {
     }
   printf("2. Move to another room\n");
   printf("3. Look at the graveyard\n");
-  printf("4. Think upon your accolades\n");
+  printf("4. Read your diary\n");
   printf("5. Quit\n");
   
   scanf("%d", &choice);
@@ -181,8 +182,8 @@ spell* loadSpells(){
     currentSpell.damage = damage;
     //Add the spell to the array
     spells[i] = currentSpell;
-    printf("%s\n", spells[i].name);
-    printf("%s\n", spells[i].element);
+    //printf("%s\n", spells[i].name);
+    //printf("%s\n", spells[i].element);
     //printf("%d\n", spells[i].damage);
   }
   fclose(file);
@@ -228,8 +229,13 @@ boss* loadBosses() {
     currentBoss.name = strdup(name);
     currentBoss.element = strdup(element);
     currentBoss.health = health;
-    currentBoss.damage = damage;
+    
 
+    //fix the damage for last boss
+    if(damage < 10){
+      damage *= 10;
+    }
+    currentBoss.damage = damage;
     // Add the boss to the array
     bosses[i] = currentBoss;
   }
@@ -239,6 +245,42 @@ boss* loadBosses() {
 
   return bosses;
 }
+
+
+//
+
+int* getConnections() {
+  // Open the file
+  FILE* file = fopen("connections.csv", "r");
+  // Check that the file opened successfully
+  if (file == NULL) {
+    printf("Error opening file\n");
+    exit(1);
+  }
+  // Count the number of lines in the file
+  int numLines = 0;
+  char line[500];
+  while (fgets(line, 500, file) != NULL) {
+    numLines++;
+  }
+  // Rewind the file
+  rewind(file);
+  // Allocate memory for the connections
+  int* dataArray = malloc(sizeof(int) * numLines * 3);
+  // Read the connections from the file
+  for (int i = 0; i < numLines; i++) {
+    fgets(line, 500, file);
+    char* token = strtok(line, ",");
+    for (int j = 0; j < 3; j++) {
+      dataArray[i * 3 + j] = atoi(token);
+      token = strtok(NULL, ",");
+    }
+  }
+  fclose(file);
+  return dataArray;
+}
+  
+
 
 // a function to load the rooms from a file
 // the file is called rooms.csv, and has a room name and room description on each line
@@ -307,27 +349,33 @@ room* loadRooms(boss* bosses) {
   // we need to loop through the rooms
   //let's pick a number between 1 and 3 for the number of connections for each room
   srand(time(NULL));
+  int* dataArray = getConnections();
   for (int i = 0; i < numLines; i++) {
-    // we need to pick a random number between 1 and 3
-    int numConnections = rand() % 3 + 1;
-    int roomToConnectTo;
-    // we need to loop numConnections times
-    for (int j = 0; j < numConnections; j++) {
-      // we need to pick a random room to connect to
-      roomToConnectTo = rand() % numLines;
-      // we need to create a connection between the rooms
+    for(int j = 0; j < 3; j++){
+ 
+      
+      //if the room is trying to connect to itself, add 1 to the room it is trying to connect to, unless it is the last room
+      if(dataArray[i * 3 + j] == i && i != numLines - 1){
+        dataArray[i * 3 + j]++;
+      }
+
+      //For each room, we need to connect to three rooms of dataArray
+      //Room 0 = 0, 1, 2 | Room 1 = 3, 4, 5 | Room 2 = 6, 7, 8 | ... Room 9 = 27, 28, 29
       connection connection;
       connection.room1 = &rooms[i];
-      connection.room2 = &rooms[roomToConnectTo];
+      connection.room2 = &rooms[dataArray[i * 3 + j]];
+
       // we need to add the connection to the room
       rooms[i].connections = realloc(rooms[i].connections, sizeof(connection) * (rooms[i].numConnections + 1));
       rooms[i].connections[rooms[i].numConnections] = connection;
       rooms[i].numConnections++;
-      //and don't forget to add the connection to the other room
-      rooms[roomToConnectTo].connections = realloc(rooms[roomToConnectTo].connections, sizeof(connection) * (rooms[roomToConnectTo].numConnections + 1));
-      rooms[roomToConnectTo].connections[rooms[roomToConnectTo].numConnections] = connection;
-      rooms[roomToConnectTo].numConnections++;
+      //Dont forget to add the connection to the other room
+      rooms[dataArray[i * 3 + j]].connections = realloc(rooms[dataArray[i * 3 + j]].connections, sizeof(connection) * (rooms[dataArray[i * 3 + j]].numConnections + 1));
+      rooms[dataArray[i * 3 + j]].connections[rooms[dataArray[i * 3 + j]].numConnections] = connection;
+      rooms[dataArray[i * 3 + j]].numConnections++;
     }
+
+    
   }
   // we need to return the array of rooms
   return rooms;
@@ -339,9 +387,10 @@ player* createPlayer(room* currentRoom) {
   player* player = malloc(sizeof(player));
   //Set the spells
   player->spells = loadSpells();
+  //Set Bosses Defeated to 0
+  player->bossesDefeated = 0;
   // we need to set the current room
   player->currentRoom = currentRoom;
-  // We need to set bosses defeated to 0
   // we need to return the player
   return player;
 }
@@ -503,6 +552,13 @@ void fightBoss(player* player) {
       theGraveyard(player, false);
     } else if (roomBoss->health <= 0) {
       printf("Congratulations! You defeated %s.\n", roomBoss->name);
+      //Add one to the bosses defeated MAKE SURE THIS CODE CAN ONLY BE DONE ONCE
+      bool canIncrement = true;
+      if(canIncrement == true){
+        player->bossesDefeated++;
+        canIncrement = false;
+      }
+      printf("You have slain %d bosses.\n\n", player->bossesDefeated);
       // Remove the boss from the room
       player->currentRoom->bossEnemy = NULL;
     }
@@ -517,10 +573,6 @@ void fightBoss(player* player) {
       theGraveyard(player, false);
     } else {
       printf("You escaped safely.\n\n");
-      // the player is moved to a random room
-      // Random number between 0 and 9
-      int randomRoom = rand() % 10;
-      player->currentRoom = &player->currentRoom[randomRoom];
     }
   }
 }
@@ -533,12 +585,18 @@ void playGame() {
   //Set the player's health to 100
   game->player->health = 100;
   game->player->baseHealth = 100;
-  //Set the bosses defeated to 0
   // we need to print the room description
   printRoomDescription(game->player->currentRoom);
   // we need to loop until the user quits
   bool quit = false;
   while (!quit) {
+    //if boss 9 is defeated, the player is a legend
+    if(game->rooms[9].bossEnemy == NULL){
+      printf("You have defeated turmoil itself!\n");
+      printf("You are a legend.\n");
+      printf("You have been added to the graveyard.\n");
+      theGraveyard(game->player, true);
+    }
     // we need to print the menu and get the user choice
     int choice = getMenuChoice(game->player);
     // we need to carry out the user choice
@@ -575,6 +633,7 @@ void playGame() {
     else if (choice == 4) {
       //print the player's health and spells
       printf("You have %d health.\n\n", game->player->health);
+      printf("You have defeated %d bosses.\n\n", game->player->bossesDefeated);
       printf("Your spells:\n");
       // for loop equal to the number of spells
       for (int i = 0; i < 5; i++) {
@@ -591,14 +650,6 @@ void playGame() {
     }
 
   }
-  //There are 10 bosses, if the player has defeated all of them, they win
- // if(game->bossesDefeated == 10){
-   //printf("Congratulations! You have defeated all the bosses!\n");
-    //printf("You win!\n");
-    // Open the graveyard
-    //theGraveyard(game->player, true);
-
-  //}
 }
 
 // let's have a main function to call the playGame function
@@ -606,13 +657,3 @@ int main() {
   playGame();
   return 0;
 }
-
-
-
-
-
-
-
-
-
-
