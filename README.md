@@ -2,9 +2,9 @@
 
 | Module Code:                     |                                   |
 |----------------------------------|-----------------------------------|
-| Assignment report Title:   Portfolio      |                                   |
-| Date (when the work completed): 29/11/2023   |                                   |
-| Actual hrs spent for the assignment: 12 |                                |
+| Assignment report Title:        |              Portfolio                      |
+| Date (when the work completed):    |                      29/11/2023             |
+| Actual hrs spent for the assignment:  |                   12             |
 
 
 ## Analysis of effect of CoPilot on Pat's coding
