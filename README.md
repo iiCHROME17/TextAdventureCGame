@@ -1,4 +1,4 @@
-# Example README.md showing required header and table format
+# Readme.md
 
 | Module Code:                     |                                   |
 |----------------------------------|-----------------------------------|
