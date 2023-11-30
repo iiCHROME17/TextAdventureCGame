@@ -1,4 +1,4 @@
-# Readme.md
+# ASSIGNMENT 1
 
 | Module Code:                     |                                   |
 |----------------------------------|-----------------------------------|
@@ -22,5 +22,5 @@
 | on Productivity           | CoPilot made productivity exponentially eaiser, when writing similar functions like those reading CSV files, it turned a tedious process into one finished in seconds. This helped with motivation as well, because not doing the tedious repetitive parts of the code allowed me to focus on implementing the more complex and interesting logic. The fact that it can also add comments to the code on my behalf helped alot during the debugging and maintenance phase.| One way it hindered productivity is due to the fact that CoPilot doesn't always get everything right. This means Sometimes I'd autocomplete a chunk of code which would turn out to give me a bus error or a segmentation fault. This would cause a lot of confusion for me, making me spend more time than I would need to if I had depended on my own knowledge over CoPilot's.                 |
 
 
-LINK TO TASK 1 LOGS:
+LINK TO LAB LOGS 1-4:
 https://csgitlab.reading.ac.uk/wc003059/cs1pc20_portfolio
