@@ -6,7 +6,6 @@
 #include <string.h>
 #include <stdbool.h>
 #include <time.h>
-
 // we want to write a text based game that is a little bit like a choose your own adventure book
 // each turn we will present the player with a choice of actions
 // the player will choose an action and we will carry it out
@@ -239,15 +238,9 @@ boss* loadBosses() {
     // Add the boss to the array
     bosses[i] = currentBoss;
   }
-
   fclose(file);
-
-
   return bosses;
 }
-
-
-//
 
 int* getConnections() {
   // Open the file
@@ -350,8 +343,8 @@ room* loadRooms(boss* bosses) {
   //let's pick a number between 1 and 3 for the number of connections for each room
   srand(time(NULL));
   int* dataArray = getConnections();
-  for (int i = 0; i < numLines; i++) {
-    for(int j = 0; j < 3; j++){
+  for (int i = 0; i < numLines; i++) { // for each room
+    for(int j = 0; j < 3; j++){ // for each connection
  
       
       //if the room is trying to connect to itself, add 1 to the room it is trying to connect to, unless it is the last room
@@ -359,7 +352,7 @@ room* loadRooms(boss* bosses) {
         dataArray[i * 3 + j]++;
       }
 
-      //For each room, we need to connect to three rooms of dataArray
+      //CoPilot PROMPT:For each room, we need to connect to three rooms of dataArray
       //Room 0 = 0, 1, 2 | Room 1 = 3, 4, 5 | Room 2 = 6, 7, 8 | ... Room 9 = 27, 28, 29
       connection connection;
       connection.room1 = &rooms[i];
@@ -374,7 +367,13 @@ room* loadRooms(boss* bosses) {
       rooms[dataArray[i * 3 + j]].connections[rooms[dataArray[i * 3 + j]].numConnections] = connection;
       rooms[dataArray[i * 3 + j]].numConnections++;
     }
-
+    // CoPilot PROMPT:if rooms is connected to itself, remove the connection
+    for(int j = 0; j < rooms[i].numConnections; j++){
+      if(rooms[i].connections[j].room2 == &rooms[i]){
+        rooms[i].connections[j] = rooms[i].connections[rooms[i].numConnections - 1];
+        rooms[i].numConnections--;
+      }
+    }
     
   }
   // we need to return the array of rooms
@@ -457,18 +456,18 @@ void fightBoss(player* player) {
   printf("OPPONENT HEALTH: %d\n", roomBoss->health);
   printf("OPPONENT ELEMENT: %s\n", roomBoss->element);
 
-  // Set the player's health to 100
-  // We need to give the player a choice of spells to use
-  // The player can choose to use a spell or try to run
-  // Once used, the boss will attack the player
-  // Both the player and the boss have a chance to crit
-  // We must compare elements
-  // If a spell element is the same as the boss element, no damage is dealt
+  //CoPilot PROMPT: Set the player's health to 100
+  //CoPilot PROMPT: We need to give the player a choice of spells to use
+  //CoPilot PROMPT: The player can choose to use a spell or try to run
+  //CoPilot PROMPT: Once used, the boss will attack the player
+  //CoPilot PROMPT: Both the player and the boss have a chance to crit
+  //CoPilot PROMPT: We must compare elements
+  //CoPilot PROMPT: If a spell element is the same as the boss element, no damage is dealt
 
-  //Fatigue threshold for using the same spell consecutively, encourage the player to use different spells
+  //CoPilot PROMPT: Fatigue threshold for using the same spell consecutively, encourage the player to use different spells
   int fatigueThreshold = 15;
-
   int choice;
+
   printf("What is your strategy?\n");
   printf("1. Use a spell\n");
   printf("2. Run\n");
@@ -576,7 +575,6 @@ void fightBoss(player* player) {
     }
   }
 }
-
 // let's have a function to play the game which is the main function
 void playGame() {
   // we need to create the game
@@ -651,7 +649,6 @@ void playGame() {
 
   }
 }
-
 // let's have a main function to call the playGame function
 int main() {
   playGame();
