@@ -282,3 +282,18 @@ Change roomToConnectTo from a random int to something in the range of i to i+3. 
       }
       printf("\n");
     }
+
+## Links to CHATGPT Prompts
+https://chat.openai.com/share/32535671-7853-42eb-911e-d635f214a13d
+https://chat.openai.com/share/d946c52f-d84f-4232-939f-bfda97f1d137
+https://chat.openai.com/share/b2f7f775-43e0-4bd9-9e3a-47615c7e2a91
+https://chat.openai.com/share/1e2ca048-2b24-44bb-8aa9-b4cce5666b00
+https://chat.openai.com/share/5c8fd072-f81f-40a9-a445-c880306e0cb2
+https://chat.openai.com/share/abc0850e-29bc-47c5-8854-4ce5d8af0163
+https://chat.openai.com/share/6582ee4d-c9a5-4077-9320-ff6e4bce14bb
+https://chat.openai.com/share/eb01f800-2346-4461-8c64-eac2bf124188
+https://chat.openai.com/share/99e558c8-6fa9-44b6-a468-ccb55191cfff
+https://chat.openai.com/share/197f9941-2617-48af-bd75-1b03ca3c89a5
+https://chat.openai.com/share/26a55a95-7bb4-454e-96ef-8f4ef9b0c1b7
+https://chat.openai.com/share/901364bf-4127-410e-ac97-621ac905ca10
+https://chat.openai.com/share/4c1f3bac-502f-4343-b19f-0ef11841d80a
