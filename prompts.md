@@ -206,7 +206,7 @@ int* getConnections() {
 ### Input
 Change roomToConnectTo from a random int to something in the range of i to i+3. This means room 0 connects to index 0,1,2 and room 2 connects to 3,4,5 ... room 9 connects to 27,28,29. If the room is equal to itself when connection , add one unless it is the final room.
 
-###Output
+### Output
   srand(time(NULL));
   int* dataArray = getConnections();
   for (int i = 0; i < numLines; i++) {
