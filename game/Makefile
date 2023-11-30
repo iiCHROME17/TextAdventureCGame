@@ -4,3 +4,8 @@ run:
 
 outerror:
 	gcc maingame.c -o maingame 2> error_log.txt
+
+play:
+	gcc maingame.c -o maingame.o
+
+	./maingame.o
